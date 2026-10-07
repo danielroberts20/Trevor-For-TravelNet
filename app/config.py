@@ -3,6 +3,7 @@ Central configuration. All environment variables are read here.
 Other modules import `settings` from this file rather than reading os.environ directly.
 """
 
+from typing import Optional
 from pydantic import Field
 from pydantic_settings import BaseSettings
 from pathlib import Path
@@ -40,7 +41,11 @@ class Settings(BaseSettings):
     compute_host: str = Field(alias="COMPUTE_HOST")
     compute_port: int = Field(alias="COMPUTE_PORT")
     compute_username: str = Field(alias="COMPUTE_USERNAME")
-    compute_password: str = Field(alias="COMPUTE_PASSWORD")
+    # Prefer a key (COMPUTE_SSH_KEY_PATH); the password is only a fallback while migrating.
+    compute_password: Optional[str] = Field(default=None, alias="COMPUTE_PASSWORD")
+    compute_ssh_key_path: Optional[str] = Field(default=None, alias="COMPUTE_SSH_KEY_PATH")
+    # known_hosts file (from `ssh-keyscan -p PORT HOST`): unknown or changed host keys are then refused.
+    compute_known_hosts_path: Optional[str] = Field(default=None, alias="COMPUTE_KNOWN_HOSTS_PATH")
  
     # Seconds of chat inactivity before the PC is automatically shut down
     compute_inactivity_timeout: int = Field(alias="COMPUTE_INACTIVITY_TIMEOUT")

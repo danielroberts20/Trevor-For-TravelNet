@@ -9,6 +9,9 @@ services:
       - /mnt/ssd/docker/services/travelnet/data:/data:ro
       - /mnt/ssd/docker/services/Trevor/chroma:/chroma
       - /home/dan/services/TravelNet/travel.yml:/config/travel.yml:ro # SSOT for travel. Injected in to prompt.
+      # SSH key + pinned host key for the compute PC (COMPUTE_SSH_KEY_PATH / COMPUTE_KNOWN_HOSTS_PATH).
+      # A directory on purpose: a missing single-file mount source would be created as a root-owned dir.
+      - /home/dan/.config/travelnet-compute:/run/secrets/compute:ro
     ports:
       - "8300:8300"
     restart: unless-stopped
