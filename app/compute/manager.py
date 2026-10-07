@@ -26,6 +26,7 @@ import logging
 import threading
 import time
 from datetime import datetime, timezone
+from pathlib import Path
 
 import httpx
 import paramiko
@@ -51,15 +52,38 @@ _state_lock = threading.Lock()
 # ---------------------------------------------------------------------------
 
 def _get_ssh_client() -> paramiko.SSHClient:
+    """Connect to the compute host.
+
+    The private key at COMPUTE_SSH_KEY_PATH is offered first and the password only as a fallback
+    (paramiko's order). With COMPUTE_KNOWN_HOSTS_PATH set, only the pinned host key is accepted
+    (unknown or changed keys raise before any credentials are sent); otherwise the previous
+    trust-on-first-use behaviour is kept.
+    """
     client = paramiko.SSHClient()
-    client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-    client.connect(
-        settings.compute_host,
+
+    known_hosts = settings.compute_known_hosts_path
+    if known_hosts and Path(known_hosts).is_file():
+        client.load_host_keys(known_hosts)
+        client.set_missing_host_key_policy(paramiko.RejectPolicy())
+    else:
+        client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+
+    kwargs = dict(
         port=settings.compute_port,
         username=settings.compute_username,
-        password=settings.compute_password,
         timeout=5,
+        allow_agent=False,
+        look_for_keys=False,
     )
+    key_path = settings.compute_ssh_key_path
+    if key_path and Path(key_path).is_file():
+        kwargs["key_filename"] = key_path
+    if settings.compute_password:
+        kwargs["password"] = settings.compute_password
+    if "key_filename" not in kwargs and "password" not in kwargs:
+        raise RuntimeError("No SSH credentials for the compute host (set COMPUTE_SSH_KEY_PATH or COMPUTE_PASSWORD)")
+
+    client.connect(settings.compute_host, **kwargs)
     return client
 
 
