@@ -42,3 +42,6 @@ app/prompt.py
 
 # Journal Exports
 AppleJournalEntries/
+
+# Local audit notes
+AUDIT.md
